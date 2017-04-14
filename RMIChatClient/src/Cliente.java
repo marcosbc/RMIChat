@@ -2,7 +2,7 @@
 import java.rmi.*;
 
 interface Cliente extends Remote {
-    String nombre=null;
-    String contraseña=null;
-    void notificacion(String apodo, String m) throws RemoteException;
+    String getUsername() throws RemoteException;
+    String getPassword() throws RemoteException;
+    void notify(String apodo, String m) throws RemoteException;
 }
