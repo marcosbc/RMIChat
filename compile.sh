@@ -8,6 +8,8 @@ CWD=`pwd`
 SVRDIR=$CWD/RMIChatServer
 CLIDIR=$CWD/RMIChatClient
 
+mkdir -p $SVRDIR/bin $CLIDIR/bin
+
 # Compilar dependencias para servidor y cliente
 cd $CLIDIR/bin
 javac -encoding iso-8859-1 -d . ../src/Cliente.java
