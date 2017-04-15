@@ -21,29 +21,28 @@ class ClienteChat {
             Sesion s = login(srv, entrada);
 
             if (!SALIDA && s != null) {
-                System.out.print(s.getUsername() + "> ");
-                while (entrada.hasNextLine()) {
-                    srv.envio(s, s.getUsername(), entrada.nextLine());
-                    System.out.print(s.getUsername() + "> ");
+                printHelp();
+                while (!SALIDA && entrada.hasNextLine()) {
+                    String line = entrada.nextLine();
+                    String words[] = line.split(" ");
+                    String command = words[0];
+                    if (line.equalsIgnoreCase(":q")) {
+                        SALIDA = true;
+                    }
+                    else if (words.length > 1 && command.equalsIgnoreCase(":m")) {
+                        String msg[] = Arrays.copyOfRange(words, 1, words.length);
+
+                        // Nuevo mensaje
+                        srv.send(String.join(" ", msg), s);
+                    }
+                    else {
+                        printHelp();
+                    }
                 }
             }
 
-            //srv.baja(c);
+            srv.logout(s);
             System.exit(0);
-
-            /*
-            String apodo = args[2];
-            SesionImpl c = new SesionImpl(apodo);
-            srv.alta(c);
-            Scanner ent = new Scanner(System.in);
-            System.out.print(apodo + "> ");
-            while (ent.hasNextLine()) {
-                srv.envio(c, apodo, ent.nextLine());
-                System.out.print(apodo + "> ");
-            }
-            srv.baja(c);
-            System.exit(0);
-            */
         }
         catch (RemoteException e) {
             System.err.println("Error de comunicacion: " + e.toString());
@@ -52,6 +51,21 @@ class ClienteChat {
             System.err.println("Excepcion en ClienteChat:");
             e.printStackTrace();
         }
+    }
+
+    private static void printHelp() {
+        // Comando invalido
+        System.out.println(
+            "Lista de comandos validos:\n\n" +
+            "    :j GRUPO\n" +
+            "    Union a un grupo de chat\n\n" +
+            "    :l GRUPO\n" +
+            "    Salida de un grupo de chat\n\n" +
+            "    :m MENSAJE\n" +
+            "    Envio de un nuevo mensaje\n\n" +
+            "    :q\n" +
+            "    Salir de la aplicacion\n"
+        );
     }
 
     private static Sesion login(ServicioChat srv, Scanner entrada) {
@@ -63,7 +77,7 @@ class ClienteChat {
         int intentos = 0;
         Sesion c = null;
 
-        System.out.println("\n\n\n\n\n");
+        System.out.println("\n\n\n");
         System.out.println("Bienvenido al ClienteChat para el proyecto de SDySW");
         System.out.println("Por favor, indique su nombre de usuario o escriba /nuevo para crear uno");
         System.out.println("En cualquier momento, escriba /exit para salir del programa\n");
@@ -157,17 +171,17 @@ class ClienteChat {
 
                 try {
                     c = new SesionImpl (username, password);
-                    srv.echo("Creacion de cliente", c);
+                    // srv.echo("Creacion de cliente", c);
                     if(srv.addUsuario(c)){
-                        srv.echo("Cliente creado", c);
+                        // srv.echo("Cliente creado", c);
                         System.out.println("\nUsuario registrado correctamente");
                         return c;
                     } else{
-                        srv.echo("Cliente duplicado", c);
+                        // srv.echo("Cliente duplicado", c);
                         System.out.println("El usuario ya existe. Por favor inténtelo de nuevo o introduzca /exit para salir");
                         finCrear=true;
                     }
-                    srv.echo("Cliente no creado", c);
+                    // srv.echo("Cliente no creado", c);
                 } catch (RemoteException e1) {
                     e1.printStackTrace();
                 }

@@ -27,15 +27,13 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         l.add(c);
     }
 
-    public void baja(Cliente c) throws RemoteException {
-        l.remove(l.indexOf(c));
-    }
     */
 
-    public void envio(Sesion s, String apodo, String m) throws RemoteException {
+    public void send(String msg, Sesion s) throws RemoteException {
         for (Sesion iterador: activos)
             if (!iterador.equals(s))
-                iterador.notify(apodo, m);
+                // TODO: Soportar apodo
+                iterador.notify(s.getUsername(), msg);
     }
 
     public boolean login(Sesion s) throws RemoteException {
@@ -57,6 +55,10 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         registrados.add(u);
         activos.add(s);
         return true;
+    }
+
+    public void logout(Sesion s) throws RemoteException {
+        activos.remove(activos.indexOf(s));
     }
 
     private Usuario buscarUsuario(Usuario u, List<Usuario> listaUsuarios) {

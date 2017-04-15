@@ -18,7 +18,7 @@ class SesionImpl extends UnicastRemoteObject implements Sesion {
     }
 
     public void notify(String apodo, String m) throws RemoteException {
-        System.out.println("\n" + apodo + "> " + m);
+        System.out.println(apodo + "> " + m);
     }
 
     public String getUsername() throws RemoteException {
