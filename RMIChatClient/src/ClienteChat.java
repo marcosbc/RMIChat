@@ -26,10 +26,10 @@ class ClienteChat {
                     String line = entrada.nextLine();
                     String words[] = line.split(" ");
                     String command = words[0];
-                    if (line.equalsIgnoreCase(":q")) {
+                    if (line.equalsIgnoreCase("/exit")) {
                         SALIDA = true;
                     }
-                    else if (words.length > 1 && command.equalsIgnoreCase(":m")) {
+                    else if (words.length > 1 && command.equalsIgnoreCase("/m")) {
                         String msg[] = Arrays.copyOfRange(words, 1, words.length);
 
                         // Nuevo mensaje
@@ -57,13 +57,13 @@ class ClienteChat {
         // Comando invalido
         System.out.println(
             "Lista de comandos validos:\n\n" +
-            "    :j GRUPO\n" +
+            "    /j GRUPO\n" +
             "    Union a un grupo de chat\n\n" +
-            "    :l GRUPO\n" +
+            "    /l GRUPO\n" +
             "    Salida de un grupo de chat\n\n" +
-            "    :m MENSAJE\n" +
+            "    /m MENSAJE\n" +
             "    Envio de un nuevo mensaje\n\n" +
-            "    :q\n" +
+            "    /exit\n" +
             "    Salir de la aplicacion\n"
         );
     }
@@ -71,29 +71,34 @@ class ClienteChat {
     private static Sesion login(ServicioChat srv, Scanner entrada) {
         boolean finLogin = false;
         String input;
-        List<String> palabras = new ArrayList<String>();
+        List<String> words = new ArrayList<String>();
         String username;
         String password;
         int intentos = 0;
         Sesion c = null;
 
-        System.out.println("\n\n\n");
-        System.out.println("Bienvenido al ClienteChat para el proyecto de SDySW");
-        System.out.println("Por favor, indique su nombre de usuario o escriba /nuevo para crear uno");
-        System.out.println("En cualquier momento, escriba /exit para salir del programa\n");
+        System.out.println(
+            "\n*** Bienvenido a ClienteChat para el proyecto de SDySW ***\n" +
+            "\nPor favor, indique su nombre de usuario o escriba /nuevo para crear uno" +
+            "\nEn cualquier momento, escriba /exit para salir del programa\n"
+        );
 
+        System.out.print("Comando: ");
         while (entrada.hasNextLine() && !finLogin){
             input = entrada.nextLine();
-            palabras = Arrays.asList(input.split(" "));
+            words = Arrays.asList(input.split(" "));
             //CASO /EXIT
-            if (input.equalsIgnoreCase("/exit")){
+            if (input == null || input.equals("")) {
+                System.out.println("\nDebe introducir un texto para el funcionamiento del programa");
+            }
+            else if (input.equalsIgnoreCase("/exit")){
                 finLogin = true;
                 SALIDA = true;
             }
             //CASO DE MAS DE UNA PALABRA
-            else if (palabras.size()!=1) {
+            else if (words.size() != 1) {
                 System.out.println("\nEl nombre de usuario ha de estar formado por una sola palabra");
-            } 
+            }
             //CASO DE NUEVO CLIENTE
             else if (input.equalsIgnoreCase("/nuevo")){
                 c = crearUsuario(srv, entrada);
@@ -102,7 +107,7 @@ class ClienteChat {
                 }else{
                     return null;
                 }
-            } 
+            }
             //NOMBRES NO PUEDEN EMPEZAR CON /
             else if (input.substring(0, 1).equals("/")){
                 System.out.println("\nEl nombre de usuario no puede empezar por /, es un carácter reservado para comandos");
@@ -110,32 +115,30 @@ class ClienteChat {
             //CASO DE LOGIN NORMAL, PIDIENDO CONTRASEÑA
             else {
                 username = new String(input);
-                System.out.println("\nPor favor, introduzca la contraseña");
+                System.out.print("Contraseña: ");
                 password = entrada.nextLine();
-                System.out.println("Comprobando credenciales, espere por favor");
                 try {
                     c = new SesionImpl(username, password);
                     if(srv.login(c)){
-                        System.out.println("\nLas credenciales son correctas. Ha iniciado sesion correctamente.");
+                        System.out.println("\nLas credenciales son correctas. Ha iniciado sesion correctamente.\n");
                         return c;
                     } else{
-                        System.out.println("\nLas credenciales no son correctas. Se permiten tres intentos.");
-                        intentos++;
-                        System.out.println("LLeva "+intentos+" intentos");
-
-                        if (intentos >= 3){
+                        if (intentos < 3) {
+                            System.out.println(
+                                "\nLas credenciales no son correctas. " +
+                                "Lleva " + (++intentos) + " de tres intentos."
+                            );
+                        } else {
                             finLogin = true;
                             SALIDA = true;
-                            System.out.println("\nDemasiados intentos, el programa se cerrarrá.");
-                        }
-                        if (!finLogin){
-                            System.out.println("Por favor, vuelva a introducir su nombre de usuario o /nuevo para crear uno");
+                            System.out.println("\n*** Demasiados intentos, el programa se cerrarrá ***");
                         }
                     }
                 } catch (RemoteException e1) {
                     e1.printStackTrace();
                 }
             }
+            System.out.print("\nComando: ");
         }
 
         return null;
@@ -146,35 +149,32 @@ class ClienteChat {
         String input;
         String username;
         String password;
-        List<String> palabras = new ArrayList<String>();
+        List<String> words = new ArrayList<String>();
         Sesion c = null;
 
         System.out.println("\nSe está procediendo a la creación de un nuevo usuario");
-        System.out.println("Por favor, indique su nombre de usuario: ");
-
+        System.out.print("Nombre de usuario: ");
         while (entrada.hasNextLine() && !finCrear){
             input = entrada.nextLine();
-            palabras = Arrays.asList(input.split(" "));
+            words = Arrays.asList(input.split(" "));
 
             if (input.equalsIgnoreCase("/exit")){
                 finCrear = true;
                 SALIDA = true;
-            } else if (palabras.size()!=1) {
+            } else if (words.size() != 1) {
                 System.out.println("\nEl nombre de usuario ha de estar formado por una sola palabra");
             } else if (input.substring(0, 1).equals("/")){
                 System.out.println("\nEl nombre de usuario no puede empezar por /, es un carácter reservado para comandos");
             } else{
                 username = new String (input);
-                System.out.println("\nPor favor, introduzca la contraseña");
+                System.out.print("Contraseña: ");
                 password = entrada.nextLine();
-                System.out.println("Se va a proceder a añadir el usuario, espere por favor");
-
                 try {
                     c = new SesionImpl (username, password);
                     // srv.echo("Creacion de cliente", c);
                     if(srv.addUsuario(c)){
                         // srv.echo("Cliente creado", c);
-                        System.out.println("\nUsuario registrado correctamente");
+                        System.out.println("\n*** Usuario registrado correctamente ***\n");
                         return c;
                     } else{
                         // srv.echo("Cliente duplicado", c);
