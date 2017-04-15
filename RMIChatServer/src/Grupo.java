@@ -3,23 +3,23 @@ import java.util.List;
 
 public class Grupo {
     String nombreGrupo;
-    List<Cliente> miembrosGrupo;
+    List<Usuario> miembrosGrupo;
 
     Grupo(){
         nombreGrupo = new String();
-        miembrosGrupo = new LinkedList<Cliente>();
+        miembrosGrupo = new LinkedList<Usuario>();
     }
 
-    Grupo (String nombre, List<Cliente> miembros){
+    Grupo (String nombre, List<Usuario> miembros){
         this.nombreGrupo = nombre;
         this.miembrosGrupo = miembros;
     }
 
-    void add (Cliente c){
-        miembrosGrupo.add(c);
+    void add (Usuario u){
+        miembrosGrupo.add(u);
     }
 
-    void remove (Cliente c){
-        miembrosGrupo.remove(c);
+    void remove (Usuario u){
+        miembrosGrupo.remove(u);
     }
 }

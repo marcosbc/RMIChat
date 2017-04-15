@@ -12,10 +12,10 @@ mkdir -p $SVRDIR/bin $CLIDIR/bin
 
 # Compilar dependencias para servidor y cliente
 cd $CLIDIR/bin
-javac -encoding iso-8859-1 -d . ../src/Cliente.java
-cp Cliente.class $SVRDIR/bin
+javac -encoding iso-8859-1 -d . ../src/Sesion.java
+cp Sesion.class $SVRDIR/bin
 cd $SVRDIR/bin
-javac -encoding iso-8859-1 -d . ../src/ServicioChat.java
+javac -encoding iso-8859-1 -d . ../src/Usuario.java ../src/ServicioChat.java
 cp ServicioChat.class $CLIDIR/bin
 
 # Compilar servidor

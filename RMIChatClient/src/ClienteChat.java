@@ -10,17 +10,18 @@ class ClienteChat {
             System.err.println("Uso: ClienteChat hostregistro numPuertoRegistro");
             return;
         }
-
-       if (System.getSecurityManager() == null)
+        if (System.getSecurityManager() == null)
             System.setSecurityManager(new SecurityManager());
 
         try {
+            SesionImpl TEST_CLIENTE = new SesionImpl(null, null);
 
             ServicioChat srv = (ServicioChat) Naming.lookup("//" + args[0] + ":" + args[1] + "/Chat");
+            srv.echo("Conexion de cliente", TEST_CLIENTE);
             Scanner entrada = new Scanner(System.in);
 
             //**********LOGIN********************
-            Cliente c = login(srv, entrada);
+            Sesion c = login(srv, entrada);
 
             if (!SALIDA && c != null){
                 //RESTO DEL PROGRAMA    
@@ -31,7 +32,7 @@ class ClienteChat {
 
             /*
             String apodo = args[2];
-            ClienteImpl c = new ClienteImpl(apodo);
+            SesionImpl c = new SesionImpl(apodo);
             srv.alta(c);
             Scanner ent = new Scanner(System.in);
             System.out.print(apodo + "> ");
@@ -52,14 +53,14 @@ class ClienteChat {
         }
     }
 
-    private static Cliente login(ServicioChat srv, Scanner entrada) {
+    private static Sesion login(ServicioChat srv, Scanner entrada) {
         boolean finLogin = false;
         String input;
         List<String> palabras = new ArrayList<String>();
         String username;
         String password;
         int intentos = 0;
-        Cliente c = null;
+        Sesion c = null;
 
         System.out.println("\n\n\n\n\n");
         System.out.println("Bienvenido al ClienteChat para el proyecto de SDySW");
@@ -98,8 +99,9 @@ class ClienteChat {
                 password = entrada.nextLine();
                 System.out.println("Comprobando credenciales, espere por favor");
                 try {
-                    c = new ClienteImpl(username, password);
+                    c = new SesionImpl(username, password);
                     if(srv.login(c)){
+                        System.out.println("\nLas credenciales son correctas. Ha iniciado sesion correctamente.");
                         return c;
                     } else{
                         System.out.println("\nLas credenciales no son correctas. Se permiten tres intentos.");
@@ -124,13 +126,13 @@ class ClienteChat {
         return null;
     }
 
-    private static Cliente crearUsuario(ServicioChat srv, Scanner entrada) {
+    private static Sesion crearUsuario(ServicioChat srv, Scanner entrada) {
         boolean finCrear = false;
         String input;
         String username;
         String password;
         List<String> palabras = new ArrayList<String>();
-        Cliente c = null;
+        Sesion c = null;
 
         System.out.println("\nSe está procediendo a la creación de un nuevo usuario");
         System.out.println("Por favor, indique su nombre de usuario: ");
@@ -153,14 +155,18 @@ class ClienteChat {
                 System.out.println("Se va a proceder a añadir el usuario, espere por favor");
 
                 try {
-                    c = new ClienteImpl (username, password);
-                    if(srv.addCliente(c)){
+                    c = new SesionImpl (username, password);
+                    srv.echo("Creacion de cliente", c);
+                    if(srv.addUsuario(c)){
+                        srv.echo("Cliente creado", c);
                         System.out.println("\nUsuario registrado correctamente");
                         return c;
                     } else{
+                        srv.echo("Cliente duplicado", c);
                         System.out.println("El usuario ya existe. Por favor inténtelo de nuevo o introduzca /exit para salir");
                         finCrear=true;
                     }
+                    srv.echo("Cliente no creado", c);
                 } catch (RemoteException e1) {
                     e1.printStackTrace();
                 }
