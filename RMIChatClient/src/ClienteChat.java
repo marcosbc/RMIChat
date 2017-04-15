@@ -14,17 +14,18 @@ class ClienteChat {
             System.setSecurityManager(new SecurityManager());
 
         try {
-            SesionImpl TEST_CLIENTE = new SesionImpl(null, null);
-
             ServicioChat srv = (ServicioChat) Naming.lookup("//" + args[0] + ":" + args[1] + "/Chat");
-            srv.echo("Conexion de cliente", TEST_CLIENTE);
             Scanner entrada = new Scanner(System.in);
 
             //**********LOGIN********************
-            Sesion c = login(srv, entrada);
+            Sesion s = login(srv, entrada);
 
-            if (!SALIDA && c != null){
-                //RESTO DEL PROGRAMA    
+            if (!SALIDA && s != null) {
+                System.out.print(s.getUsername() + "> ");
+                while (entrada.hasNextLine()) {
+                    srv.envio(s, s.getUsername(), entrada.nextLine());
+                    System.out.print(s.getUsername() + "> ");
+                }
             }
 
             //srv.baja(c);

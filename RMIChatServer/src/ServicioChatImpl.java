@@ -4,12 +4,12 @@ import java.rmi.server.*;
 
 class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     List<Usuario> registrados;
-    List<Usuario> activos;
+    List<Sesion> activos;
     List<Grupo> grupos;
 
     ServicioChatImpl() throws RemoteException {
         registrados = new LinkedList<Usuario>();
-        activos = new LinkedList<Usuario>();
+        activos = new LinkedList<Sesion>();
         grupos = new LinkedList<Grupo>();
         load();
     }
@@ -30,14 +30,13 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     public void baja(Cliente c) throws RemoteException {
         l.remove(l.indexOf(c));
     }
-
-    public void envio(Cliente esc, String apodo, String m)
-        throws RemoteException {
-        for (Cliente c: l) 
-        if (!c.equals(esc))
-            c.notificacion(apodo, m);
-    }
     */
+
+    public void envio(Sesion s, String apodo, String m) throws RemoteException {
+        for (Sesion iterador: activos)
+            if (!iterador.equals(s))
+                iterador.notify(apodo, m);
+    }
 
     public boolean login(Sesion s) throws RemoteException {
         Usuario u = new Usuario(s.getUsername(), s.getPassword());
@@ -45,7 +44,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
             // No se encuentra el usuario: No se ha registrado aun
             return false;
         }
-        activos.add(u);
+        activos.add(s);
         return true;
     }
 
@@ -56,10 +55,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
             return false;
         }
         registrados.add(u);
-        // Aniadir a clientes activos, siempre que no lo estuviese ya
-        if (buscarUsuario(u, activos) == null) {
-            activos.add(u);
-        }
+        activos.add(s);
         return true;
     }
 
