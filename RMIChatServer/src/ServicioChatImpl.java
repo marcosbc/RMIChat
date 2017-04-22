@@ -1,25 +1,61 @@
 import java.util.*;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.File;
+import java.io.IOException;
 import java.rmi.*;
 import java.rmi.server.*;
 
 class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     List<Usuario> registrados;
-    List<Sesion> activos;
+    List<Cliente> activos;
     List<Grupo> grupos;
+    
+    File userFile;
+    File groupFile;
+    ObjectMapper JSONSerializer;
 
     ServicioChatImpl() throws RemoteException {
-        registrados = new LinkedList<Usuario>();
-        activos = new LinkedList<Sesion>();
-        grupos = new LinkedList<Grupo>();
+        activos = new LinkedList<Cliente>();
         load();
     }
 
     private void load() {
-        // Aqui va la carga de los json de los usuarios y grupos registrados
+        userFile = new File ("./usuarios.json");
+        groupFile = new File ("./grupos.json");
+        JSONSerializer = new ObjectMapper();
+        
+        try {
+            if (userFile.exists() && (userFile.length() != 0)) {
+                registrados = JSONSerializer.readValue(userFile, new TypeReference<List<Usuario>>() {});
+            } else {
+                userFile.createNewFile();
+                registrados = new ArrayList<Usuario>();
+            }
+            
+            if (groupFile.exists() && (groupFile.length() != 0)) {
+                grupos = JSONSerializer.readValue(groupFile, new TypeReference<List<Grupo>>() {});
+            } else {
+                groupFile.createNewFile();
+                grupos = new ArrayList<Grupo>();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    private void save(){
-        // Aqui va el guardado de las listas de registrados y grupos a json
+    private void save(){        
+        try {
+            JSONSerializer.writeValue(userFile, this.registrados);
+            JSONSerializer.writeValue(groupFile, this.grupos);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
     }
 
     /*
@@ -29,36 +65,36 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
 
     */
 
-    public void send(String msg, Sesion s) throws RemoteException {
-        for (Sesion iterador: activos)
-            if (!iterador.equals(s))
+    public void send(String msg, Cliente c) throws RemoteException {
+        for (Cliente iterador: activos)
+            if (!iterador.equals(c))
                 // TODO: Soportar apodo
-                iterador.notify(s.getUsername(), msg);
+                iterador.notify(c.getUsername(), msg);
     }
 
-    public boolean login(Sesion s) throws RemoteException {
-        Usuario u = new Usuario(s.getUsername(), s.getPassword());
+    public boolean login(Cliente c) throws RemoteException {
+        Usuario u = new Usuario(c.getUsername(), c.getPassword());
         if (buscarUsuario(u, registrados) == null) {
             // No se encuentra el usuario: No se ha registrado aun
             return false;
         }
-        activos.add(s);
+        activos.add(c);
         return true;
     }
 
-    public boolean addUsuario(Sesion s) throws RemoteException {
-        Usuario u = new Usuario(s.getUsername(), s.getPassword());
+    public boolean addUsuario(Cliente c) throws RemoteException {
+        Usuario u = new Usuario(c.getUsername(), c.getPassword());
         if (buscarUsuario(u, registrados) != null) {
             // Ya esta registrado
             return false;
         }
         registrados.add(u);
-        activos.add(s);
+        activos.add(c);
         return true;
     }
 
-    public void logout(Sesion s) throws RemoteException {
-        activos.remove(activos.indexOf(s));
+    public void logout(Cliente c) throws RemoteException {
+        activos.remove(activos.indexOf(c));
     }
 
     private Usuario buscarUsuario(Usuario u, List<Usuario> listaUsuarios) {
@@ -71,8 +107,8 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     }
 
     // Simple eco, para probar conexion entre cliente y servidor
-    public void echo(String msg, Sesion s) throws RemoteException {
+    public void echo(String msg, Cliente c) throws RemoteException {
         System.out.println(msg);
-        s.echo(msg);
+        c.echo(msg);
     }
 }

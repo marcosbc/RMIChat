@@ -1,7 +1,7 @@
 
 import java.rmi.*;
 
-interface Sesion extends Remote {
+interface Cliente extends Remote {
     String getUsername() throws RemoteException;
     String getPassword() throws RemoteException;
     void notify(String apodo, String m) throws RemoteException;

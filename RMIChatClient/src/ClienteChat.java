@@ -18,7 +18,7 @@ class ClienteChat {
             Scanner entrada = new Scanner(System.in);
 
             //**********LOGIN********************
-            Sesion s = login(srv, entrada);
+            Cliente s = login(srv, entrada);
 
             if (!SALIDA && s != null) {
                 printHelp();
@@ -68,14 +68,14 @@ class ClienteChat {
         );
     }
 
-    private static Sesion login(ServicioChat srv, Scanner entrada) {
+    private static Cliente login(ServicioChat srv, Scanner entrada) {
         boolean finLogin = false;
         String input;
         List<String> words = new ArrayList<String>();
         String username;
         String password;
         int intentos = 0;
-        Sesion c = null;
+        Cliente c = null;
 
         System.out.println(
             "\n*** Bienvenido a ClienteChat para el proyecto de SDySW ***\n" +
@@ -118,7 +118,7 @@ class ClienteChat {
                 System.out.print("Contraseña: ");
                 password = entrada.nextLine();
                 try {
-                    c = new SesionImpl(username, password);
+                    c = new ClienteImpl(username, password);
                     if(srv.login(c)){
                         System.out.println("\nLas credenciales son correctas. Ha iniciado sesion correctamente.\n");
                         return c;
@@ -144,13 +144,13 @@ class ClienteChat {
         return null;
     }
 
-    private static Sesion crearUsuario(ServicioChat srv, Scanner entrada) {
+    private static Cliente crearUsuario(ServicioChat srv, Scanner entrada) {
         boolean finCrear = false;
         String input;
         String username;
         String password;
         List<String> words = new ArrayList<String>();
-        Sesion c = null;
+        Cliente c = null;
 
         System.out.println("\nSe está procediendo a la creación de un nuevo usuario");
         System.out.print("Nombre de usuario: ");
@@ -170,7 +170,7 @@ class ClienteChat {
                 System.out.print("Contraseña: ");
                 password = entrada.nextLine();
                 try {
-                    c = new SesionImpl (username, password);
+                    c = new ClienteImpl (username, password);
                     // srv.echo("Creacion de cliente", c);
                     if(srv.addUsuario(c)){
                         // srv.echo("Cliente creado", c);
