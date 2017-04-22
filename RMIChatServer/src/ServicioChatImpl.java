@@ -14,7 +14,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     List<Usuario> registrados;
     List<Cliente> activos;
     List<Grupo> grupos;
-    
+
     File userFile;
     File groupFile;
     ObjectMapper JSONSerializer;
@@ -28,7 +28,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         userFile = new File ("./usuarios.json");
         groupFile = new File ("./grupos.json");
         JSONSerializer = new ObjectMapper();
-        
+
         try {
             if (userFile.exists() && (userFile.length() != 0)) {
                 registrados = JSONSerializer.readValue(userFile, new TypeReference<List<Usuario>>() {});
@@ -36,7 +36,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
                 userFile.createNewFile();
                 registrados = new ArrayList<Usuario>();
             }
-            
+
             if (groupFile.exists() && (groupFile.length() != 0)) {
                 grupos = JSONSerializer.readValue(groupFile, new TypeReference<List<Grupo>>() {});
             } else {
@@ -48,24 +48,24 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         }
     }
 
-    private void save(){        
+    private void save() {
         try {
             JSONSerializer.writeValue(userFile, this.registrados);
             JSONSerializer.writeValue(groupFile, this.grupos);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
     }
 
-    /*
-    public void alta(Cliente c) throws RemoteException {
-        l.add(c);
+    public void joinGroup(String group, Cliente c) throws RemoteException {
+        // TODO: Implementar
     }
 
-    */
+    public void leaveGroup(String group, Cliente c) throws RemoteException {
+        // TODO: Implementar
+    }
 
-    public void send(String msg, Cliente c) throws RemoteException {
+    public void sendMessage(String dest, String msg, Cliente c) throws RemoteException {
         for (Cliente iterador: activos)
             if (!iterador.equals(c))
                 // TODO: Soportar apodo
