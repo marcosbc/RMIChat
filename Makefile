@@ -31,5 +31,5 @@ compilar-cliente: deps-cliente
 	$(JAVAC) -d $(CLIBIN) -cp $(CLICLASSPATH) $(CLISRC)/*.java
 
 clean:
-	rm -rf $(SERVBIN)/*.class $(CLIBIN)/*.class
+	rm -rf $(SERVBIN)/*.class $(SERVBIN)/*.json $(CLIBIN)/*.class
 
