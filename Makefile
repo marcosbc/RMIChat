@@ -13,21 +13,21 @@ CLISRC=$(CLIDIR)/src
 CLIBIN=$(CLIDIR)/bin
 CLICLASSPATH=$(CLIBIN)
 
-all: jdk-version-check servidor cliente
+all: jdk-version-check compilar-servidor compilar-cliente
 
 jdk-version-check:
 	@echo -e "javac 1.8\n$(shell javac -version 2>&1)" | sort -ct. -k1,1n -k2,2n -k3,3n 2>/dev/null || ( echo "Tu version de Java JDK es menor a 1.8.0" && exit 1 )
 
-depsservidor:
+deps-servidor:
 	$(JAVAC) -d $(SERVBIN) -cp $(SERVCLASSPATH) $(CLISRC)/Cliente.java
 
-depscliente:
+deps-cliente:
 	$(JAVAC) -d $(CLIBIN) -cp $(CLICLASSPATH) $(CLISRC)/Cliente.java $(SERVSRC)/ServicioChat.java
 
-servidor: depsservidor
+compilar-servidor: deps-servidor
 	$(JAVAC) -d $(SERVBIN) -cp $(SERVCLASSPATH) $(SERVSRC)/*.java
 
-cliente: depscliente
+compilar-cliente: deps-cliente
 	$(JAVAC) -d $(CLIBIN) -cp $(CLICLASSPATH) $(CLISRC)/*.java
 
 clean:
