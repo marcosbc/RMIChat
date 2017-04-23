@@ -44,14 +44,4 @@ class Logger {
     public static void err (String msg) {
         text(RED + msg + RESET);
     }
-    public static void notif (String user, String group, String message) {
-        // Los mensajes privados no tienen grupo especificado
-        if (group == null || group.equals("")) {
-            // Mensaje privado al cliente exclusivamente
-            text(GRAY_BOLD + "(privado) " + CYAN_BOLD + user + "> " + RESET + message);
-        } else {
-            // Mensaje público en un grupo
-            text(RED_BOLD + group + " " + CYAN_BOLD + user + "> " + RESET + message);
-        }
-    }
 }

@@ -11,10 +11,18 @@ import java.rmi.*;
 import java.rmi.server.*;
 
 class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
+    // Constantes utilizadas para notificaciones a clientes
+    public static final int NOTIFICATION_GROUPMSG = 0;
+    public static final int NOTIFICATION_PRIVATEMSG = 1;
+    public static final int NOTIFICATION_USERJOIN = 2;
+    public static final int NOTIFICATION_USERLEAVE = 3;
+
+    // Listas de usuarios, grupos y asociaciones clientes-usuario
     List<Usuario> registrados;
     List<Grupo> grupos;
     Map<Cliente, Usuario> sessions;
 
+    // Ficheros para persistencia de usuarios y grupos
     File userFile;
     File groupFile;
     ObjectMapper JSONSerializer;
@@ -66,6 +74,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         Grupo g = findGroup(name);
         if (g != null) {
             if (g.add(sessions.get(c))) {
+                notifyGroup(NOTIFICATION_USERJOIN, c, name, null);
                 return true;
             }
         }
@@ -75,6 +84,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     public boolean leaveGroup(String name, Cliente c) throws RemoteException {
         Grupo g = findGroup(name);
         if (g != null) {
+            notifyGroup(NOTIFICATION_USERLEAVE, c, name, null);
             if (g.remove(sessions.get(c))) {
                 return true;
             }
@@ -113,42 +123,51 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
 
     public boolean sendMessage(String dest, String msg, Cliente c) throws RemoteException {
         boolean success = false;
-        // Validar parametros
-        if (dest == null || dest.equals("") || msg == null || msg.equals("") || c == null || dest.length() <= 2) {
-            // Los parametros están vacíos o son incorrectos
+        // Validar parámetros
+        if (dest != null && !dest.equals("") && msg != null && !msg.equals("") && c != null && dest.length() > 2) {
+            // Caso de mensaje privado
+            if (dest.substring(0, 1).equals("@")) {
+                success = notifyPrivate(NOTIFICATION_PRIVATEMSG, c, dest, msg);
+            }
+            else if (dest.substring(0, 1).equals("#")) {
+                success = notifyGroup(NOTIFICATION_GROUPMSG, c, dest, msg);
+            }
         }
-        // Caso de mensaje privado
-        else if (dest.substring(0, 1).equals("@")) {
-            // Obtener usuario origen
-            Usuario orig = sessions.get(c);
-            if (orig != null) {
-                // Buscar cliente destino (a partir del nombre de usuario)
-                for (Map.Entry<Cliente, Usuario> entry: sessions.entrySet()) {
-                    if (dest.equals("@" + entry.getValue().getUsername())) {
-                        success = true;
-                        entry.getKey().notify(orig.getUsername(), null, msg);
-                    }
+        return success;
+    }
+
+    private boolean notifyPrivate(int notificationType, Cliente c, String dest, String msg) throws RemoteException {
+        boolean success = false;
+        Usuario orig = sessions.get(c);
+        // Buscar cliente(s) destino (a partir del nombre de usuario)
+        if (orig != null) {
+            for (Map.Entry<Cliente, Usuario> entry: sessions.entrySet()) {
+                if (dest.equals("@" + entry.getValue().getUsername())) {
+                    success = true;
+                    entry.getKey().notify(NOTIFICATION_PRIVATEMSG, orig.getUsername(), null, msg);
                 }
             }
         }
-        else if (dest.substring(0, 1).equals("#")) {
-            // Obtener usuario origen
-            Usuario orig = sessions.get(c);
-            Grupo g = findGroup(dest);
-            // Comprobar que el grupo es válido
-            // Nos aseguramos que el usuario que envía el mensaje está en el grupo
-            if (orig != null && g != null && g.hasMember(orig)) {
-                List<Usuario> members = g.getMembers();
-                // Proceder al envío del mensaje a cada usuario del grupo
-                for (int i = 0; i < members.size(); i++) {
-                    // Buscar cliente destino (a partir de nombres de usuario)
-                    for (Map.Entry<Cliente, Usuario> entry: sessions.entrySet()) {
-                        // Comprobar que coincide con un miembro del grupo
-                        // No debe coincidir con el miembro que envía el mensaje
-                        if (entry.getValue().equals(members.get(i)) && !entry.getValue().equals(orig)) {
-                            success = true;
-                            entry.getKey().notify(orig.getUsername(), dest, msg);
-                        }
+        return success;
+    }
+
+    private boolean notifyGroup(int notificationType, Cliente c, String dest, String msg) throws RemoteException {
+        boolean success = false;
+        Usuario orig = sessions.get(c);
+        Grupo g = findGroup(dest);
+        // Comprobar que el grupo es válido
+        // Nos aseguramos que el usuario que envía el mensaje está en el grupo
+        if (orig != null && g != null && g.hasMember(orig)) {
+            List<Usuario> members = g.getMembers();
+            // Proceder al envío del mensaje a cada usuario del grupo
+            for (int i = 0; i < members.size(); i++) {
+                // Buscar cliente destino (a partir de nombres de usuario)
+                for (Map.Entry<Cliente, Usuario> entry: sessions.entrySet()) {
+                    // Comprobar que coincide con un miembro del grupo
+                    // No debe coincidir con el miembro que envía el mensaje
+                    if (entry.getValue().equals(members.get(i)) && !entry.getValue().equals(orig)) {
+                        success = true;
+                        entry.getKey().notify(notificationType, orig.getUsername(), dest, msg);
                     }
                 }
             }
