@@ -24,16 +24,16 @@ class ClienteImpl extends UnicastRemoteObject implements Cliente {
                Logger.text(Logger.RED_BOLD + group + " " + Logger.CYAN_BOLD + user + "> " + Logger.RESET + m);
                break;
             case NOTIFICATION_PRIVATEMSG:
-               Logger.text(Logger.GRAY_BOLD + group + " " + Logger.CYAN_BOLD + user + "> " + Logger.RESET + m);
+               Logger.text(Logger.GRAY_BOLD + "(privado) " + Logger.CYAN_BOLD + user + "> " + Logger.RESET + m);
                break;
             case NOTIFICATION_USERJOIN:
-               Logger.info(user + " se ha unido a " + group);
+               Logger.text(Logger.RED_BOLD + group + " " + Logger.GRAY_BOLD + user + " se ha unido" + Logger.RESET);
                break;
             case NOTIFICATION_USERLEAVE:
-               Logger.info(user + " ha salido de " + group);
+               Logger.text(Logger.RED_BOLD + group + " " + Logger.GRAY_BOLD + user + " ha salido" + Logger.RESET);
                break;
             default:
-               Logger.err("Unknown notification type received from server");
+               Logger.err("Una notificación recibida del servidor no se ha reconocido");
         }
     }
 

@@ -142,7 +142,8 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         // Buscar cliente(s) destino (a partir del nombre de usuario)
         if (orig != null) {
             for (Map.Entry<Cliente, Usuario> entry: sessions.entrySet()) {
-                if (dest.equals("@" + entry.getValue().getUsername())) {
+                // Comprobar que coincide con nombre de usuario, y no con el usuario origen
+                if (dest.equals("@" + entry.getValue().getUsername()) && !entry.getValue().equals(orig)) {
                     success = true;
                     entry.getKey().notify(NOTIFICATION_PRIVATEMSG, orig.getUsername(), null, msg);
                 }
