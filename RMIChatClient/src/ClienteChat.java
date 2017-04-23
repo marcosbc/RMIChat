@@ -49,9 +49,8 @@ class ClienteChat {
         // Ejecucion del programa: Imprimir ayuda y procesar comandos
         printHelp();
         while (!salirPrograma && input.hasNextLine()) {
-            String line = input.nextLine();
+            String line = input.nextLine().trim();
             String words[] = line.split(" ");
-            String command = words[0];
             try {
                 // Caso de linea vacia: Mostrar mensaje de error
                 if (line == null || line.equals("")) {
@@ -77,7 +76,7 @@ class ClienteChat {
                 else if (line.equalsIgnoreCase("/show")) {
                     String currentGroups[] = srv.listGroups(c);
                     if (currentGroups != null && currentGroups.length > 0) {
-                        System.out.println("Lista de grupos a los que te has unido: " + String.join(" ,", currentGroups) + ".");
+                        System.out.println("Lista de grupos a los que te has unido: " + String.join(", ", currentGroups) + ".");
                     }
                     else {
                         System.out.println("No estás unido a ningún grupo.");
@@ -160,7 +159,7 @@ class ClienteChat {
         // Obtener nombre de usuario
         System.out.print("Comando: ");
         while (!finLogin && input.hasNextLine()) {
-            String line = input.nextLine();
+            String line = input.nextLine().trim();
             String words[] = line.split(" ");
             // Caso de linea vacia: Mostrar mensaje de error
             if (line == null || line.equals("")) {
@@ -236,7 +235,7 @@ class ClienteChat {
         // Obtener nombre de usuario
         System.out.print("Nombre de usuario: ");
         while (!finCrear && input.hasNextLine()) {
-            String line = input.nextLine();
+            String line = input.nextLine().trim();
             String words[] = line.split(" ");
             // Caso de linea vacia: Mostrar mensaje de error
             if (line == null || line.equals("")) {
