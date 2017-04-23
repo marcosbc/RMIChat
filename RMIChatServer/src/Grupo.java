@@ -31,11 +31,33 @@ public class Grupo {
         return members;
     }
 
-    public void add (Usuario u) {
+    public boolean add (Usuario u) {
+        boolean found = false;
+        if (hasMember(u)) {
+            return false;
+        }
         members.add(u);
+        return true;
     }
 
-    public void remove (Usuario u) {
-        members.remove(u);
+    public boolean remove (Usuario u) {
+        if (!hasMember(u)) {
+            return false;
+        }
+        for (int i = 0; i < members.size(); i++) {
+            if (members.get(i).equals(u)) {
+                members.remove(i);
+            }
+        }
+        return true;
+    }
+
+    public boolean hasMember (Usuario u) {
+        for (int i = 0; i < members.size(); i++) {
+            if (members.get(i).equals(u)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

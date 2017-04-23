@@ -75,9 +75,9 @@ class ClienteChat {
                 }
                 // Caso "/show"; Mostrar lista de grupos existentes
                 else if (line.equalsIgnoreCase("/show")) {
-                    String currentGroups[] = c.listGroups();
+                    String currentGroups[] = srv.listGroups(c);
                     if (currentGroups != null && currentGroups.length > 0) {
-                        System.out.println("Lista de grupos a los que te has unido: " + String.join(" ", currentGroups));
+                        System.out.println("Lista de grupos a los que te has unido: " + String.join(" ,", currentGroups) + ".");
                     }
                     else {
                         System.out.println("No estás unido a ningún grupo.");
@@ -99,7 +99,9 @@ class ClienteChat {
                 else if ((line.substring(0, 1).equals("@") || line.substring(0, 1).equals("#")) && words.length >= 2) {
                     String msg[] = Arrays.copyOfRange(words, 1, words.length);
                     // Mensaje hacia el usuario/grupo en cuestión
-                    srv.sendMessage(words[0], String.join(" ", msg), c);
+                    if (!srv.sendMessage(words[0], String.join(" ", msg), c)) {
+                        System.out.println("No se ha podido mandar el mensaje anterior.");
+                    }
                 }
                 else {
                     printHelp();
@@ -181,7 +183,7 @@ class ClienteChat {
             }
             // Validacion; los nombres no pueden empezar por "/" (reservado para comandos)
             else if (line.substring(0, 1).equals("/")) {
-                System.out.println("\nEl nombre de usuario no puede empezar por /, es un carácter reservado para comandos");
+                System.out.println("\nEl nombre de usuario no puede empezar por /, es un carácter reservado para comandos\n");
             }
             // Todo bien; pedimos contraseña
             else {
@@ -200,7 +202,7 @@ class ClienteChat {
                         if (intentos < MAX_INTENTOS) {
                             System.out.println(
                                 "\nLas credenciales no son correctas. " +
-                                "Lleva " + (++intentos) + " de " + MAX_INTENTOS + " intentos."
+                                "Lleva " + (++intentos) + " de " + MAX_INTENTOS + " intentos.\n"
                             );
                         } else {
                             System.out.println("\n*** Demasiados intentos, el programa se cerrarrá ***");
@@ -229,7 +231,7 @@ class ClienteChat {
         String password = null;
         Cliente c = null;
 
-        System.out.println("\nSe está procediendo a la creación de un nuevo usuario");
+        System.out.println("\nSe está procediendo a la creación de un nuevo usuario\n");
 
         // Obtener nombre de usuario
         System.out.print("Nombre de usuario: ");

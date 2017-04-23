@@ -14,6 +14,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     List<Usuario> registrados;
     List<Cliente> activos;
     List<Grupo> grupos;
+    Map<Cliente, Usuario> clientToUser;
 
     File userFile;
     File groupFile;
@@ -21,6 +22,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
 
     ServicioChatImpl() throws RemoteException {
         activos = new LinkedList<Cliente>();
+        clientToUser = new HashMap<Cliente, Usuario>();
         load();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
@@ -62,31 +64,33 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         }
     }
 
-    public boolean joinGroup(String g, Cliente c) throws RemoteException {
-        if (findGroup(g)) {
-            c.joinGroup(g);
-            // TODO: Implementar logica de suscripcion
-            return true;
-        }
-        return false;
-    }
-
-    public boolean leaveGroup(String g, Cliente c) throws RemoteException {
-        if (findGroup(g)) {
-            c.leaveGroup(g);
-            // TODO: Implementar logica de suscripcion
-            return true;
-        }
-        return false;
-    }
-
-    private boolean findGroup(String g) {
-        for (int i = 0; i < grupos.size(); i++) {
-            if (grupos.get(i).getName().equals(g)) {
+    public boolean joinGroup(String name, Cliente c) throws RemoteException {
+        Grupo g = findGroup(name);
+        if (g != null) {
+            if (g.add(clientToUser.get(c))) {
                 return true;
             }
         }
         return false;
+    }
+
+    public boolean leaveGroup(String name, Cliente c) throws RemoteException {
+        Grupo g = findGroup(name);
+        if (g != null) {
+            if (g.remove(clientToUser.get(c))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Grupo findGroup(String g) {
+        for (int i = 0; i < grupos.size(); i++) {
+            if (grupos.get(i).getName().equals(g)) {
+                return grupos.get(i);
+            }
+        }
+        return null;
     }
 
     public String[] listGroups() throws RemoteException {
@@ -97,11 +101,70 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         return g.toArray(new String[g.size()]);
     }
 
-    public void sendMessage(String dest, String msg, Cliente c) throws RemoteException {
-        for (Cliente iterador: activos)
-            if (!iterador.equals(c))
-                // TODO: Soportar apodo
-                iterador.notify(c.getUsername(), msg);
+    public String[] listGroups(Cliente c) throws RemoteException {
+        ArrayList<String> g = new ArrayList<String>();
+        Usuario u = clientToUser.get(c);
+        // Recorrer cada grupo y comprobar si es miembro
+        for (int i = 0; i < grupos.size(); i++) {
+            if (grupos.get(i).hasMember(u)) {
+                g.add(grupos.get(i).getName());
+            }
+        }
+        return g.toArray(new String[g.size()]);
+    }
+
+    public boolean sendMessage(String dest, String msg, Cliente c) throws RemoteException {
+        boolean success = false;
+        // Validar parametros
+        if (dest == null || dest.equals("") || msg == null || msg.equals("") || c == null || dest.length() <= 2) {
+            // Los parametros están vacíos o son incorrectos
+        }
+        // Caso de mensaje privado
+        else if (dest.substring(0, 1).equals("@")) {
+            // Obtener usuario origen
+            Usuario orig = clientToUser.get(c);
+            if (orig != null) {
+                // Buscar cliente destino (a partir del nombre de usuario)
+                for (Map.Entry<Cliente, Usuario> entry: clientToUser.entrySet()) {
+                    if (dest.equals("@" + entry.getValue().getUsername())) {
+                        success = true;
+                        entry.getKey().notify(orig.getUsername(), null, msg);
+                    }
+                }
+            }
+        }
+        else if (dest.substring(0, 1).equals("#")) {
+            // Obtener usuario origen
+            Usuario orig = clientToUser.get(c);
+            if (orig != null) {
+                // Comprobar que el grupo es válido
+                Grupo g = findGroup(dest);
+                if (g != null) {
+                    List<Usuario> members = g.getMembers();
+                    // Asegurarnos que el usuario que envía el mensaje está en el grupo
+                    boolean userInGroup = false;
+                    for (int i = 0; i < members.size(); i++) {
+                        if (members.get(i).equals(orig)) {
+                            userInGroup = true;
+                        }
+                    }
+                    // Proceder al envío del mensaje
+                    for (int i = 0; userInGroup && i < members.size(); i++) {
+                        // Buscar cliente destino (a partir del nombre de usuario)
+                        for (Map.Entry<Cliente, Usuario> entry: clientToUser.entrySet()) {
+                            // Comprobar que coincide con un miembro del grupo
+                            // No debe coincidir con el miembro que envía el mensaje
+                            if (entry.getValue().equals(members.get(i)) && !entry.getValue().equals(orig)) {
+                                success = true;
+                                entry.getKey().notify(orig.getUsername(), dest, msg);
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+        return success;
     }
 
     public boolean login(Cliente c) throws RemoteException {
@@ -111,6 +174,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
             return false;
         }
         activos.add(c);
+        clientToUser.put(c, u);
         return true;
     }
 
@@ -122,16 +186,27 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         }
         registrados.add(u);
         activos.add(c);
+        clientToUser.put(c, u);
         return true;
     }
 
     public void logout(Cliente c) throws RemoteException {
         activos.remove(activos.indexOf(c));
+        clientToUser.remove(c);
     }
 
     private Usuario buscarUsuario(Usuario u, List<Usuario> listaUsuarios) {
         for(Usuario iteradorUsuario: listaUsuarios) {
             if (iteradorUsuario.equals(u)) {
+                return iteradorUsuario;
+            }
+        }
+        return null;
+    }
+
+    private Usuario buscarUsuario(String username, List<Usuario> listaUsuarios) {
+        for(Usuario iteradorUsuario: listaUsuarios) {
+            if (username.equals("@" + iteradorUsuario.getUsername())) {
                 return iteradorUsuario;
             }
         }

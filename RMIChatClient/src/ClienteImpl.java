@@ -13,8 +13,15 @@ class ClienteImpl extends UnicastRemoteObject implements Cliente {
         this.currentGroups = new ArrayList<String>();
     }
 
-    public void notify(String apodo, String m) throws RemoteException {
-        System.out.println(apodo + "> " + m);
+    public void notify(String user, String group, String m) throws RemoteException {
+        // Los mensajes privados no tienen grupo especificado
+        if (group == null || group.equals("")) {
+            // Mensaje privado al cliente exclusivamente
+            System.out.println("(privado) " + user + "> " + m);
+        } else {
+            // Mensaje público en un grupo
+            System.out.println(group + " " + user + "> " + m);
+        }
     }
 
     public String getUsername() throws RemoteException {
@@ -23,24 +30,6 @@ class ClienteImpl extends UnicastRemoteObject implements Cliente {
 
     public String getPassword() throws RemoteException {
         return password;
-    }
-
-    public String[] listGroups() {
-        return currentGroups.toArray(new String[currentGroups.size()]);
-    }
-
-    public void joinGroup(String g) {
-        if (!currentGroups.contains(g)) {
-            currentGroups.add(g);
-        }
-    }
-
-    public void leaveGroup(String g) {
-        for (int i = 0; i < currentGroups.size(); i++) {
-            if (currentGroups.get(i).equals(g)) {
-                currentGroups.remove(i);
-            }
-        }
     }
 
     public void echo(String msg) {
