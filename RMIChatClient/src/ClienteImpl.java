@@ -14,14 +14,7 @@ class ClienteImpl extends UnicastRemoteObject implements Cliente {
     }
 
     public void notify(String user, String group, String m) throws RemoteException {
-        // Los mensajes privados no tienen grupo especificado
-        if (group == null || group.equals("")) {
-            // Mensaje privado al cliente exclusivamente
-            System.out.println("(privado) " + user + "> " + m);
-        } else {
-            // Mensaje público en un grupo
-            System.out.println(group + " " + user + "> " + m);
-        }
+        Logger.notif(user, group, m);
     }
 
     public String getUsername() throws RemoteException {
@@ -33,6 +26,6 @@ class ClienteImpl extends UnicastRemoteObject implements Cliente {
     }
 
     public void echo(String msg) {
-        System.out.println("Recibido mensaje de eco: " + msg);
+        Logger.info("Recibido mensaje de eco: " + msg);
     }
 }
