@@ -4,7 +4,7 @@ import java.rmi.server.*;
 
 class ClienteChat {
     // Constantes del programa
-    public static final int MAX_INTENTOS = 3;
+    private static final int MAX_INTENTOS = 3;
 
     // Colores para simplificar la lectura de mensajes
     public static final String ANSI_RESET = "\u001B[0m";
@@ -20,7 +20,9 @@ class ClienteChat {
     // Programa principal "main"
     static public void main (String args[]) {
         boolean salirPrograma = false;
+        Scanner input = new Scanner(System.in);
         Cliente c = null;
+        ServicioChat srv = null;
         if (args.length!=2) {
             System.err.println("Uso: ClienteChat hostregistro numPuertoRegistro");
             return;
@@ -29,45 +31,9 @@ class ClienteChat {
             System.setSecurityManager(new SecurityManager());
         }
         try {
-            ServicioChat srv = (ServicioChat) Naming.lookup("//" + args[0] + ":" + args[1] + "/Chat");
-            Scanner input = new Scanner(System.in);
+            srv = (ServicioChat) Naming.lookup("//" + args[0] + ":" + args[1] + "/Chat");
             // Realizar el login del usuario, mediante parametros por linea de comandos
-            if ((c = login(srv, input)) != null) {
-                printHelp();
-                while (!salirPrograma && input.hasNextLine()) {
-                    String line = input.nextLine();
-                    String words[] = line.split(" ");
-                    String command = words[0];
-                    // Caso de linea vacia: Mostrar mensaje de error
-                    if (line == null || line.equals("")) {
-                        System.out.println("Debe introducir un comando válido para el funcionamiento del programa");
-                    }
-                    // Caso "/exit"; salir del programa
-                    else if (line.equalsIgnoreCase("/exit")) {
-                        // Salida del programa
-                        salirPrograma = true;
-                    }
-                    // Caso "/j"; unión a un grupo
-                    else if (line.substring(0, 2).equalsIgnoreCase("/j") && words.length == 2) {
-                        srv.joinGroup(words[1], c);
-                    }
-                    // Caso "/l"; unión a un grupo
-                    else if (line.substring(0, 2).equalsIgnoreCase("/l") && words.length == 2) {
-                        srv.leaveGroup(words[1], c);
-                    }
-                    // Caso de mensaje público (@usuario) o privado (#grupo)
-                    else if ((line.substring(0, 1).equals("@") || line.substring(0, 1).equals("#")) && words.length >= 2) {
-                        String msg[] = Arrays.copyOfRange(words, 1, words.length);
-                        // Mensaje hacia el usuario/grupo en cuestión
-                        srv.sendMessage(words[0], String.join(" ", msg), c);
-                    }
-                    else {
-                        printHelp();
-                    }
-                }
-                srv.logout(c);
-            }
-            System.exit(0);
+            c = login(srv, input);
         }
         catch (RemoteException e) {
             System.err.println("Error de comunicacion: " + e.toString());
@@ -76,22 +42,101 @@ class ClienteChat {
             System.err.println("Excepcion en ClienteChat:");
             e.printStackTrace();
         }
+        // En caso de login incorrecto, salir con error
+        if (c == null) {
+            System.exit(1);
+        }
+        // Ejecucion del programa: Imprimir ayuda y procesar comandos
+        printHelp();
+        while (!salirPrograma && input.hasNextLine()) {
+            String line = input.nextLine();
+            String words[] = line.split(" ");
+            String command = words[0];
+            try {
+                // Caso de linea vacia: Mostrar mensaje de error
+                if (line == null || line.equals("")) {
+                    System.out.println("Debe introducir un comando válido para el funcionamiento del programa");
+                }
+                // Caso "/exit"; salir del programa
+                else if (line.equalsIgnoreCase("/exit")) {
+                    // Salida del programa
+                    salirPrograma = true;
+                }
+                // Caso "/all"; Mostrar lista de grupos existentes
+                else if (line.equalsIgnoreCase("/groups")) {
+                    // Obtener lista de grupos del servidor
+                    String groups[] = srv.listGroups();
+                    if (groups != null && groups.length > 0) {
+                        System.out.println("Lista de grupos disponibles: " + String.join(", ", groups) + ".");
+                    }
+                    else {
+                        System.out.println("No hay grupos disponibles a los que unirse.");
+                    }
+                }
+                // Caso "/show"; Mostrar lista de grupos existentes
+                else if (line.equalsIgnoreCase("/show")) {
+                    String currentGroups[] = c.listGroups();
+                    if (currentGroups != null && currentGroups.length > 0) {
+                        System.out.println("Lista de grupos a los que te has unido: " + String.join(" ", currentGroups));
+                    }
+                    else {
+                        System.out.println("No estás unido a ningún grupo.");
+                    }
+                }
+                // Caso "/j"; unión a un grupo
+                else if (words[0].equalsIgnoreCase("/j") && words.length == 2) {
+                    if (!srv.joinGroup(words[1], c)) {
+                        System.out.println("No se ha podido realizar la unión al grupo \"" + words[1] + "\".");
+                    }
+                }
+                // Caso "/l"; unión a un grupo
+                else if (words[0].equalsIgnoreCase("/l") && words.length == 2) {
+                    if (!srv.leaveGroup(words[1], c)) {
+                        System.out.println("No se ha podido realizar la salida del grupo \"" + words[1] + "\".");
+                    }
+                }
+                // Caso de mensaje público (@usuario) o privado (#grupo)
+                else if ((line.substring(0, 1).equals("@") || line.substring(0, 1).equals("#")) && words.length >= 2) {
+                    String msg[] = Arrays.copyOfRange(words, 1, words.length);
+                    // Mensaje hacia el usuario/grupo en cuestión
+                    srv.sendMessage(words[0], String.join(" ", msg), c);
+                }
+                else {
+                    printHelp();
+                }
+            }
+            catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        // Realizar logout y salida del programa
+        try {
+            srv.logout(c);
+        }
+        catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        System.exit(0);
     }
 
     private static void printHelp() {
         // Comando invalido
         System.out.println(
             "Lista de comandos validos:\n\n" +
+            "    /groups\n" +
+            "    Mostrar lista de grupos existentes.\n\n" +
+            "    /show\n" +
+            "    Mostrar lista de grupos a los que te has unido.\n\n" +
             "    /j #GRUPO\n" +
             "    Union a un grupo de chat.\n\n" +
             "    /l #GRUPO\n" +
             "    Salida de un grupo de chat.\n\n" +
             "    #GRUPO MENSAJE\n" +
-            "    Envio de un nuevo mensaje público al grupo #GRUPO. Por ejemplo:\n" +
-            "    #general Hola a todos!\n\n" +
+            "    Envio de un nuevo mensaje público al grupo #GRUPO.\n" +
+            "    Por ejemplo: #general Hola a todos!\n\n" +
             "    @USUARIO MENSAJE\n" +
-            "    Envio de un nuevo mensaje privado a USUARIO. Por ejemplo:\n" +
-            "    @fulanito Hola!\n\n" +
+            "    Envio de un nuevo mensaje privado a USUARIO.\n" +
+            "    Por ejemplo: @fulanito Hola!\n\n" +
             "    /exit\n" +
             "    Salir de la aplicación.\n"
         );

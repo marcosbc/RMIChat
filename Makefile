@@ -30,6 +30,10 @@ compilar-servidor: deps-servidor
 compilar-cliente: deps-cliente
 	$(JAVAC) -d $(CLIBIN) -cp $(CLICLASSPATH) $(CLISRC)/*.java
 
+samples:
+	cp $(SERVBIN)/usuarios.json.example $(SERVBIN)/usuarios.json
+	cp $(SERVBIN)/grupos.json.example $(SERVBIN)/grupos.json
+
 clean:
 	rm -rf $(SERVBIN)/*.class $(SERVBIN)/*.json $(CLIBIN)/*.class
 

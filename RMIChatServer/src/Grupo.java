@@ -2,24 +2,40 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class Grupo {
-    String nombreGrupo;
-    List<Usuario> miembrosGrupo;
+    String name;
+    List<Usuario> members;
 
-    Grupo(){
-        nombreGrupo = new String();
-        miembrosGrupo = new LinkedList<Usuario>();
+    Grupo() {
+        name = new String();
+        members = new LinkedList<Usuario>();
     }
 
-    Grupo (String nombre, List<Usuario> miembros){
-        this.nombreGrupo = nombre;
-        this.miembrosGrupo = miembros;
+    Grupo (String name, List<Usuario> members) {
+        this.name = name;
+        this.members = members;
     }
 
-    void add (Usuario u){
-        miembrosGrupo.add(u);
+    public void setName (String name) {
+        this.name = name;
     }
 
-    void remove (Usuario u){
-        miembrosGrupo.remove(u);
+    public String getName () {
+        return name;
+    }
+
+    public void setMembers (List<Usuario> members) {
+        this.members = members;
+    }
+
+    public List<Usuario> getMembers () {
+        return members;
+    }
+
+    public void add (Usuario u) {
+        members.add(u);
+    }
+
+    public void remove (Usuario u) {
+        members.remove(u);
     }
 }

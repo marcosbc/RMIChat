@@ -1,20 +1,16 @@
-
+import java.util.*;
 import java.rmi.*;
 import java.rmi.server.*;
 
 class ClienteImpl extends UnicastRemoteObject implements Cliente {
-    static final int CHAT_VOID = 0;
-    static final int CHAT_DIRECTO = 1;
-    static final int CHAT_GRUPO = 2;
     private String username;
     private String password;
-    private String destination; //destino será un nombre de usuario o de grupo según el tipo de chat en el que estemos
-    int status; //estado toma los valores de las constantes de arriba para saber si está en un chat directo o de grupo
+    private List<String> currentGroups;
 
     ClienteImpl(String username, String password) throws RemoteException {
         this.username = username;
         this.password = password;
-        this.status = CHAT_VOID;
+        this.currentGroups = new ArrayList<String>();
     }
 
     public void notify(String apodo, String m) throws RemoteException {
@@ -29,12 +25,22 @@ class ClienteImpl extends UnicastRemoteObject implements Cliente {
         return password;
     }
 
-    public String getDestination() throws RemoteException {
-        return destination;
+    public String[] listGroups() {
+        return currentGroups.toArray(new String[currentGroups.size()]);
     }
 
-    public void setDestination(String destination) throws RemoteException {
-        this.destination = destination;
+    public void joinGroup(String g) {
+        if (!currentGroups.contains(g)) {
+            currentGroups.add(g);
+        }
+    }
+
+    public void leaveGroup(String g) {
+        for (int i = 0; i < currentGroups.size(); i++) {
+            if (currentGroups.get(i).equals(g)) {
+                currentGroups.remove(i);
+            }
+        }
     }
 
     public void echo(String msg) {

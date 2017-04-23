@@ -22,6 +22,11 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     ServicioChatImpl() throws RemoteException {
         activos = new LinkedList<Cliente>();
         load();
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                save();
+            }
+        });
     }
 
     private void load() {
@@ -57,12 +62,39 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         }
     }
 
-    public void joinGroup(String group, Cliente c) throws RemoteException {
-        // TODO: Implementar
+    public boolean joinGroup(String g, Cliente c) throws RemoteException {
+        if (findGroup(g)) {
+            c.joinGroup(g);
+            // TODO: Implementar logica de suscripcion
+            return true;
+        }
+        return false;
     }
 
-    public void leaveGroup(String group, Cliente c) throws RemoteException {
-        // TODO: Implementar
+    public boolean leaveGroup(String g, Cliente c) throws RemoteException {
+        if (findGroup(g)) {
+            c.leaveGroup(g);
+            // TODO: Implementar logica de suscripcion
+            return true;
+        }
+        return false;
+    }
+
+    private boolean findGroup(String g) {
+        for (int i = 0; i < grupos.size(); i++) {
+            if (grupos.get(i).getName().equals(g)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public String[] listGroups() throws RemoteException {
+        ArrayList<String> g = new ArrayList<String>();
+        for (int i = 0; i < grupos.size(); i++) {
+            g.add(grupos.get(i).getName());
+        }
+        return g.toArray(new String[g.size()]);
     }
 
     public void sendMessage(String dest, String msg, Cliente c) throws RemoteException {
