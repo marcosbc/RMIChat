@@ -12,17 +12,15 @@ import java.rmi.server.*;
 
 class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     List<Usuario> registrados;
-    List<Cliente> activos;
     List<Grupo> grupos;
-    Map<Cliente, Usuario> clientToUser;
+    Map<Cliente, Usuario> sessions;
 
     File userFile;
     File groupFile;
     ObjectMapper JSONSerializer;
 
     ServicioChatImpl() throws RemoteException {
-        activos = new LinkedList<Cliente>();
-        clientToUser = new HashMap<Cliente, Usuario>();
+        sessions = new HashMap<Cliente, Usuario>();
         load();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
@@ -67,7 +65,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     public boolean joinGroup(String name, Cliente c) throws RemoteException {
         Grupo g = findGroup(name);
         if (g != null) {
-            if (g.add(clientToUser.get(c))) {
+            if (g.add(sessions.get(c))) {
                 return true;
             }
         }
@@ -77,7 +75,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     public boolean leaveGroup(String name, Cliente c) throws RemoteException {
         Grupo g = findGroup(name);
         if (g != null) {
-            if (g.remove(clientToUser.get(c))) {
+            if (g.remove(sessions.get(c))) {
                 return true;
             }
         }
@@ -103,7 +101,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
 
     public String[] listGroups(Cliente c) throws RemoteException {
         ArrayList<String> g = new ArrayList<String>();
-        Usuario u = clientToUser.get(c);
+        Usuario u = sessions.get(c);
         // Recorrer cada grupo y comprobar si es miembro
         for (int i = 0; i < grupos.size(); i++) {
             if (grupos.get(i).hasMember(u)) {
@@ -122,10 +120,10 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         // Caso de mensaje privado
         else if (dest.substring(0, 1).equals("@")) {
             // Obtener usuario origen
-            Usuario orig = clientToUser.get(c);
+            Usuario orig = sessions.get(c);
             if (orig != null) {
                 // Buscar cliente destino (a partir del nombre de usuario)
-                for (Map.Entry<Cliente, Usuario> entry: clientToUser.entrySet()) {
+                for (Map.Entry<Cliente, Usuario> entry: sessions.entrySet()) {
                     if (dest.equals("@" + entry.getValue().getUsername())) {
                         success = true;
                         entry.getKey().notify(orig.getUsername(), null, msg);
@@ -135,31 +133,22 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         }
         else if (dest.substring(0, 1).equals("#")) {
             // Obtener usuario origen
-            Usuario orig = clientToUser.get(c);
-            if (orig != null) {
-                // Comprobar que el grupo es válido
-                Grupo g = findGroup(dest);
-                if (g != null) {
-                    List<Usuario> members = g.getMembers();
-                    // Asegurarnos que el usuario que envía el mensaje está en el grupo
-                    boolean userInGroup = false;
-                    for (int i = 0; i < members.size(); i++) {
-                        if (members.get(i).equals(orig)) {
-                            userInGroup = true;
+            Usuario orig = sessions.get(c);
+            Grupo g = findGroup(dest);
+            // Comprobar que el grupo es válido
+            // Nos aseguramos que el usuario que envía el mensaje está en el grupo
+            if (orig != null && g != null && g.hasMember(orig)) {
+                List<Usuario> members = g.getMembers();
+                // Proceder al envío del mensaje a cada usuario del grupo
+                for (int i = 0; i < members.size(); i++) {
+                    // Buscar cliente destino (a partir de nombres de usuario)
+                    for (Map.Entry<Cliente, Usuario> entry: sessions.entrySet()) {
+                        // Comprobar que coincide con un miembro del grupo
+                        // No debe coincidir con el miembro que envía el mensaje
+                        if (entry.getValue().equals(members.get(i)) && !entry.getValue().equals(orig)) {
+                            success = true;
+                            entry.getKey().notify(orig.getUsername(), dest, msg);
                         }
-                    }
-                    // Proceder al envío del mensaje
-                    for (int i = 0; userInGroup && i < members.size(); i++) {
-                        // Buscar cliente destino (a partir del nombre de usuario)
-                        for (Map.Entry<Cliente, Usuario> entry: clientToUser.entrySet()) {
-                            // Comprobar que coincide con un miembro del grupo
-                            // No debe coincidir con el miembro que envía el mensaje
-                            if (entry.getValue().equals(members.get(i)) && !entry.getValue().equals(orig)) {
-                                success = true;
-                                entry.getKey().notify(orig.getUsername(), dest, msg);
-                            }
-                        }
-
                     }
                 }
             }
@@ -173,8 +162,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
             // No se encuentra el usuario: No se ha registrado aun
             return false;
         }
-        activos.add(c);
-        clientToUser.put(c, u);
+        sessions.put(c, u);
         return true;
     }
 
@@ -185,14 +173,12 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
             return false;
         }
         registrados.add(u);
-        activos.add(c);
-        clientToUser.put(c, u);
+        sessions.put(c, u);
         return true;
     }
 
     public void logout(Cliente c) throws RemoteException {
-        activos.remove(activos.indexOf(c));
-        clientToUser.remove(c);
+        sessions.remove(c);
     }
 
     private Usuario buscarUsuario(Usuario u, List<Usuario> listaUsuarios) {
