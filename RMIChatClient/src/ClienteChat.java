@@ -181,7 +181,7 @@ class ClienteChat {
             else {
                 username = line;
                 Logger.prompt("Contraseña: ");
-                password = input.nextLine();
+                password = System.console().readPassword().toString();
                 try {
                     // Instanciar el cliente y realizar login
                     c = new ClienteImpl(username, password);
@@ -250,7 +250,7 @@ class ClienteChat {
             else {
                 username = line;
                 Logger.prompt("Contraseña: ");
-                password = input.nextLine();
+                password = System.console().readPassword().toString();
                 try {
                     // Instanciar el cliente y realizar login
                     c = new ClienteImpl(username, password);
