@@ -85,8 +85,8 @@ class ClienteImpl extends UnicastRemoteObject implements Cliente {
         return password;
     }
 
-    // Simple eco, para probar conexion entre cliente y servidor
-    public void echo(String msg) {
-        Logger.info("Recibido mensaje de eco: " + msg);
+    // Simple método para probar conectividad con el cliente, de parte del servidor
+    public boolean ping() throws RemoteException {
+        return true;
     }
 }

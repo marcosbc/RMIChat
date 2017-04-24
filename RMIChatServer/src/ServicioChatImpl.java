@@ -39,6 +39,8 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     ServicioChatImpl() throws RemoteException {
         sessions = new HashMap<Cliente, Usuario>();
         load();
+        // Hilo que se asegura que los clientes activos no se han desconectado
+        new CheckSessionsThread(sessions, this).start();
         // Hilo que guarda usuarios activos en caso de cierre abrupto del programa
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
@@ -294,9 +296,12 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         return null;
     }
 
-    // Simple eco, para probar conexion entre cliente y servidor
-    public void echo(String msg, Cliente c) throws RemoteException {
-        System.out.println(msg);
-        c.echo(msg);
+    // Simple método para probar conectividad con el servidor, de parte del cliente
+    public boolean ping(Cliente c) throws RemoteException {
+        if (sessions.get(c) == null) {
+            // In case the user was logged out, ignore requests
+            return false;
+        }
+        return true;
     }
 }

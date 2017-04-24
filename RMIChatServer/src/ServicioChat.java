@@ -10,5 +10,5 @@ interface ServicioChat extends Remote {
     boolean addUsuario(Cliente c) throws RemoteException;
     boolean login(Cliente c) throws RemoteException;
     void logout(Cliente c) throws RemoteException;
-    void echo(String msg, Cliente c) throws RemoteException;
+    boolean ping(Cliente c) throws RemoteException;
 }
