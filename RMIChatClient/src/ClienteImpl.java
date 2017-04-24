@@ -20,6 +20,8 @@ class ClienteImpl extends UnicastRemoteObject implements Cliente {
     public static final int NOTIFICATION_GROUPEMPTY = 9;
     public static final int NOTIFICATION_NOMSGTYPE = 10;
     public static final int NOTIFICATION_NOSELFMSG = 11;
+    public static final int NOTIFICATION_USERCONNECT = 12;
+    public static final int NOTIFICATION_USERDISCONNECT = 13;
 
     // Constantes de texto
     public static final String NOOP = "No se ha podido realizar la operaci\u00f3n anterior";
@@ -41,10 +43,10 @@ class ClienteImpl extends UnicastRemoteObject implements Cliente {
                Logger.text(Logger.GRAY_BOLD + "(privado) " + Logger.CYAN_BOLD + user + "> " + Logger.RESET + m);
                break;
             case NOTIFICATION_USERJOIN:
-               Logger.text(Logger.RED_BOLD + group + " " + Logger.GRAY_BOLD + user + " se ha unido" + Logger.RESET);
+               Logger.text(Logger.RED_BOLD + group + " " + Logger.GRAY_BOLD + user + " se ha unido al grupo." + Logger.RESET);
                break;
             case NOTIFICATION_USERLEAVE:
-               Logger.text(Logger.RED_BOLD + group + " " + Logger.GRAY_BOLD + user + " ha salido" + Logger.RESET);
+               Logger.text(Logger.RED_BOLD + group + " " + Logger.GRAY_BOLD + user + " ha salido del grupo." + Logger.RESET);
                break;
             case NOTIFICATION_NOSUCHGROUP:
                Logger.info(NOOP + ": No existe tal grupo.");
@@ -69,6 +71,12 @@ class ClienteImpl extends UnicastRemoteObject implements Cliente {
                break;
             case NOTIFICATION_NOSELFMSG:
                Logger.info(NOOP + ": No puedes enviarte mensajes a t\u00ed mismo.");
+               break;
+            case NOTIFICATION_USERCONNECT:
+               Logger.text(Logger.RED_BOLD + group + " " + Logger.GRAY_BOLD + user + " se ha conectado." + Logger.RESET);
+               break;
+            case NOTIFICATION_USERDISCONNECT:
+               Logger.text(Logger.RED_BOLD + group + " " + Logger.GRAY_BOLD + user + " ha cerrado sesi\u00f3n." + Logger.RESET);
                break;
             default:
                Logger.err("Una notificaci\u00f3n recibida del servidor no se ha reconocido.");
