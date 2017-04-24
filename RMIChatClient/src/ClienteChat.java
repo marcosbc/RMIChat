@@ -9,9 +9,9 @@ class ClienteChat {
     // Programa principal "main"
     static public void main (String args[]) {
         boolean salirPrograma = false;
-        Scanner input = new Scanner(System.in);
         Cliente c = null;
         ServicioChat srv = null;
+        Scanner input = new Scanner(System.in);
         if (args.length != 2) {
             Logger.err("Uso: ClienteChat hostregistro numPuertoRegistro");
             return;
@@ -23,12 +23,14 @@ class ClienteChat {
             srv = (ServicioChat) Naming.lookup("//" + args[0] + ":" + args[1] + "/Chat");
             // Realizar el login del usuario, mediante parametros por linea de comandos
             c = login(srv, input);
+            // Hilo que cierra sesión en caso de cierre abrupto del programa
+            Runtime.getRuntime().addShutdownHook(new ExitThread(c, srv));
         }
         catch (RemoteException e) {
-            Logger.err("Error de comunicacion: " + e.toString());
+            Logger.err("Error de comunicaci\u00f3n: " + e.toString());
         }
         catch (Exception e) {
-            Logger.err("Excepcion en ClienteChat:");
+            Logger.err("Excepci\u00f3n en ClienteChat:");
             e.printStackTrace();
         }
         // En caso de login incorrecto, salir con error
@@ -43,7 +45,7 @@ class ClienteChat {
             try {
                 // Caso de linea vacia: Mostrar mensaje de error
                 if (line == null || line.equals("")) {
-                    Logger.warn("Debe introducir un comando válido para el funcionamiento del programa");
+                    Logger.warn("Debe introducir un comando v\u00e1lido para el funcionamiento del programa.");
                 }
                 // Caso "/exit"; salir del programa
                 else if (line.equalsIgnoreCase("/exit")) {
@@ -68,28 +70,22 @@ class ClienteChat {
                         Logger.info("Lista de grupos a los que te has unido: " + String.join(", ", currentGroups) + ".");
                     }
                     else {
-                        Logger.info("No te has unido a ningún grupo.");
+                        Logger.info("No te has unido a ning\u00fan grupo.");
                     }
                 }
                 // Caso "/j"; unión a un grupo
                 else if (words[0].equalsIgnoreCase("/j") && words.length == 2) {
-                    if (!srv.joinGroup(words[1], c)) {
-                        Logger.warn("No se ha podido realizar la unión al grupo \"" + words[1] + "\".");
-                    }
+                    srv.joinGroup(words[1], c);
                 }
                 // Caso "/l"; unión a un grupo
                 else if (words[0].equalsIgnoreCase("/l") && words.length == 2) {
-                    if (!srv.leaveGroup(words[1], c)) {
-                        Logger.warn("No se ha podido realizar la salida del grupo \"" + words[1] + "\".");
-                    }
+                    srv.leaveGroup(words[1], c);
                 }
                 // Caso de mensaje público (@usuario) o privado (#grupo)
                 else if ((line.substring(0, 1).equals("@") || line.substring(0, 1).equals("#")) && words.length >= 2) {
                     String msg[] = Arrays.copyOfRange(words, 1, words.length);
                     // Mensaje hacia el usuario/grupo en cuestión
-                    if (!srv.sendMessage(words[0], String.join(" ", msg), c)) {
-                        Logger.warn("No se ha podido mandar el mensaje anterior.");
-                    }
+                    srv.sendMessage(words[0], String.join(" ", msg), c);
                 }
                 else {
                     printHelp();
@@ -112,7 +108,7 @@ class ClienteChat {
     private static void printHelp() {
         // Comando invalido
         Logger.text(
-            "Lista de comandos validos:\n\n" +
+            "Lista de comandos v\u00e1lidos:\n\n" +
             "    " + Logger.GRAY_BOLD + "/groups\n" + Logger.RESET +
             "    Mostrar lista de grupos existentes.\n\n" +
             "    " + Logger.GRAY_BOLD + "/show\n" + Logger.RESET +
@@ -122,13 +118,13 @@ class ClienteChat {
             "    " + Logger.GRAY_BOLD + "/l #GRUPO\n" + Logger.RESET +
             "    Salida de un grupo de chat.\n\n" +
             "    " + Logger.GRAY_BOLD + "#GRUPO MENSAJE\n" + Logger.RESET +
-            "    Envio de un nuevo mensaje público al grupo #GRUPO.\n" +
+            "    Env\u00edo de un nuevo mensaje p\u00fablico al grupo #GRUPO.\n" +
             "    Por ejemplo: #general Hola a todos!\n\n" +
             "    " + Logger.GRAY_BOLD + "@USUARIO MENSAJE\n" + Logger.RESET +
-            "    Envio de un nuevo mensaje privado a USUARIO.\n" +
+            "    Env\u00edo de un nuevo mensaje privado a USUARIO.\n" +
             "    Por ejemplo: @fulanito Hola!\n\n" +
             "    " + Logger.GRAY_BOLD + "/exit\n" + Logger.RESET +
-            "    Salir de la aplicación.\n"
+            "    Salir de la aplicaci\u00f3n.\n"
         );
     }
 
@@ -146,7 +142,7 @@ class ClienteChat {
             "\nPor favor, indique su nombre de usuario o escriba " +
             Logger.GRAY_BOLD + "/nuevo" + Logger.RESET + " para crear uno" +
             "\nEn cualquier momento, escriba " +
-            Logger.GRAY_BOLD + "/exit" + Logger.RESET + " para salir del programa\n"
+            Logger.GRAY_BOLD + "/exit" + Logger.RESET + " para salir del programa.\n"
         );
 
         // Obtener nombre de usuario
@@ -156,11 +152,11 @@ class ClienteChat {
             String words[] = line.split(" ");
             // Caso de linea vacia: Mostrar mensaje de error
             if (line == null || line.equals("")) {
-                Logger.warn("Debe introducir un comando válido para el funcionamiento del programa");
+                Logger.warn("Debe introducir un comando v\u00e1lido para el funcionamiento del programa.");
             }
             // Caso de mas de una palabra: Mostrar mensaje de error
             else if (words.length != 1) {
-                Logger.warn("\nEl nombre de usuario ha de estar formado por una sola palabra");
+                Logger.warn("\nEl nombre de usuario ha de estar formado por una sola palabra.");
             }
             // Caso "/exit"; salir del programa
             else if (line.equalsIgnoreCase("/exit")){
@@ -175,18 +171,18 @@ class ClienteChat {
             }
             // Validacion; los nombres no pueden empezar por "/" (reservado para comandos)
             else if (line.substring(0, 1).equals("/")) {
-                Logger.warn("\nEl nombre de usuario no puede empezar por \"/\", es un carácter reservado para comandos\n");
+                Logger.warn("\nEl nombre de usuario no puede empezar por \"/\", es un car\u00e1cter reservado para comandos.\n");
             }
             // Todo bien; pedimos contraseña
             else {
                 username = line;
-                Logger.prompt("Contraseña: ");
+                Logger.prompt("Contrase\u00f1a: ");
                 password = System.console().readPassword().toString();
                 try {
                     // Instanciar el cliente y realizar login
                     c = new ClienteImpl(username, password);
                     if (srv.login(c)) {
-                        Logger.success("\nLas credenciales son correctas. Ha iniciado sesion correctamente.\n");
+                        Logger.success("\nLas credenciales son correctas. Ha iniciado sesi\u00f3n correctamente.\n");
                         finLogin = true;
                     } else {
                         c = null;
@@ -197,7 +193,7 @@ class ClienteChat {
                                 "Lleva " + (++intentos) + " de " + MAX_INTENTOS + " intentos.\n"
                             );
                         } else {
-                            Logger.err("\n*** Demasiados intentos, el programa se cerrarrá ***");
+                            Logger.err("\n*** Demasiados intentos, el programa se cerrarr\u00e1 ***");
                             // Se producira una salida del programa
                             break;
                         }
@@ -223,7 +219,7 @@ class ClienteChat {
         String password = null;
         Cliente c = null;
 
-        Logger.warn("\nSe está procediendo a la creación de un nuevo usuario\n");
+        Logger.warn("\nSe est\u00e1 procediendo a la creaci\u00f3n de un nuevo usuario\n");
 
         // Obtener nombre de usuario
         Logger.prompt("Nombre de usuario: ");
@@ -232,7 +228,7 @@ class ClienteChat {
             String words[] = line.split(" ");
             // Caso de linea vacia: Mostrar mensaje de error
             if (line == null || line.equals("")) {
-                Logger.warn("Debe introducir un nombre de usuario no vacío");
+                Logger.warn("Debe introducir un nombre de usuario no vac\u00edo.");
             }
             // Caso "/exit"; salir del programa
             else if (line.equalsIgnoreCase("/exit")) {
@@ -240,16 +236,16 @@ class ClienteChat {
             }
             // Caso de mas de una palabra: Mostrar mensaje de error
             else if (words.length != 1) {
-                Logger.warn("\nEl nombre de usuario ha de estar formado por una sola palabra");
+                Logger.warn("\nEl nombre de usuario ha de estar formado por una sola palabra.");
             }
             // Validacion; los nombres no pueden empezar por "/" (reservado para comandos)
             else if (line.substring(0, 1).equals("/")) {
-                Logger.warn("\nEl nombre de usuario no puede empezar por /, es un carácter reservado para comandos");
+                Logger.warn("\nEl nombre de usuario no puede empezar por /, es un car\u00e1cter reservado para comandos");
             }
             // Todo bien; pedimos contraseña
             else {
                 username = line;
-                Logger.prompt("Contraseña: ");
+                Logger.prompt("Contrase\u00f1a: ");
                 password = System.console().readPassword().toString();
                 try {
                     // Instanciar el cliente y realizar login
@@ -259,7 +255,7 @@ class ClienteChat {
                         finCrear = true;
                     } else {
                         c = null;
-                        Logger.warn("El usuario ya existe. Por favor, inténtelo de nuevo o introduzca /exit para salir.");
+                        Logger.warn("El usuario ya existe. Por favor, int\u00e9ntelo de nuevo o introduzca /exit para salir.");
                     }
                 } catch (RemoteException e) {
                     e.printStackTrace();

@@ -16,6 +16,14 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     public static final int NOTIFICATION_PRIVATEMSG = 1;
     public static final int NOTIFICATION_USERJOIN = 2;
     public static final int NOTIFICATION_USERLEAVE = 3;
+    public static final int NOTIFICATION_NOSUCHGROUP = 4;
+    public static final int NOTIFICATION_ALREADYMEMBERSHIP= 5;
+    public static final int NOTIFICATION_NOMEMBERSHIP = 6;
+    public static final int NOTIFICATION_NOSUCHUSER = 7;
+    public static final int NOTIFICATION_NOVALIDMSG = 8;
+    public static final int NOTIFICATION_GROUPEMPTY = 9;
+    public static final int NOTIFICATION_NOMSGTYPE = 10;
+    public static final int NOTIFICATION_NOSELFMSG = 11;
 
     // Listas de usuarios, grupos y asociaciones clientes-usuario
     List<Usuario> registrados;
@@ -27,9 +35,11 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     File groupFile;
     ObjectMapper JSONSerializer;
 
+    // Constructor de clase
     ServicioChatImpl() throws RemoteException {
         sessions = new HashMap<Cliente, Usuario>();
         load();
+        // Hilo que guarda usuarios activos en caso de cierre abrupto del programa
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 save();
@@ -37,6 +47,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         });
     }
 
+    // Cargar usuarios y grupos, durante arranque, para persistencia
     private void load() {
         userFile = new File ("./usuarios.json");
         groupFile = new File ("./grupos.json");
@@ -61,6 +72,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         }
     }
 
+    // Guardar usuarios y grupos, al final de ejecucion, para persistencia
     private void save() {
         try {
             JSONSerializer.writeValue(userFile, this.registrados);
@@ -70,6 +82,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         }
     }
 
+    // Unión a un grupo por un usuario
     public boolean joinGroup(String name, Cliente c) throws RemoteException {
         Grupo g = findGroup(name);
         if (g != null) {
@@ -77,21 +90,39 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
                 notifyGroup(NOTIFICATION_USERJOIN, c, name, null);
                 return true;
             }
+            else {
+                // Notificación en caso de que el usuario ya perteneciese al grupo
+                notifyPrivate(NOTIFICATION_ALREADYMEMBERSHIP, c, c.getUsername(), null);
+            }
+        }
+        else {
+            // Notificación en caso de que el grupo no exista
+            notifyPrivate(NOTIFICATION_NOSUCHGROUP, c, c.getUsername(), null);
         }
         return false;
     }
 
+    // Salida de un grupo por un usuario
     public boolean leaveGroup(String name, Cliente c) throws RemoteException {
         Grupo g = findGroup(name);
         if (g != null) {
+            // Nota: Solo se notificará si el usuario pertenece al grupo
             notifyGroup(NOTIFICATION_USERLEAVE, c, name, null);
             if (g.remove(sessions.get(c))) {
                 return true;
             }
+            else {
+                // Notificación en caso de que el usuario no perteneciese al grupo
+                notifyPrivate(NOTIFICATION_NOMEMBERSHIP, c, c.getUsername(), null);
+            }
+        } else {
+            // Notificación en caso de que el grupo no exista
+            notifyPrivate(NOTIFICATION_NOSUCHGROUP, c, c.getUsername(), null);
         }
         return false;
     }
 
+    // Buscar un grupo por su nombre
     private Grupo findGroup(String g) {
         for (int i = 0; i < grupos.size(); i++) {
             if (grupos.get(i).getName().equals(g)) {
@@ -101,6 +132,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         return null;
     }
 
+    // Listado de todos los grupos
     public String[] listGroups() throws RemoteException {
         ArrayList<String> g = new ArrayList<String>();
         for (int i = 0; i < grupos.size(); i++) {
@@ -109,6 +141,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         return g.toArray(new String[g.size()]);
     }
 
+    // Listado de grupos a los que pertenezca un usuario
     public String[] listGroups(Cliente c) throws RemoteException {
         ArrayList<String> g = new ArrayList<String>();
         Usuario u = sessions.get(c);
@@ -121,37 +154,74 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         return g.toArray(new String[g.size()]);
     }
 
+    // Envío de un mensaje de chat por un usuario, a un destino
     public boolean sendMessage(String dest, String msg, Cliente c) throws RemoteException {
         boolean success = false;
         // Validar parámetros
         if (dest != null && !dest.equals("") && msg != null && !msg.equals("") && c != null && dest.length() > 2) {
             // Caso de mensaje privado
             if (dest.substring(0, 1).equals("@")) {
-                success = notifyPrivate(NOTIFICATION_PRIVATEMSG, c, dest, msg);
+                if (dest.equals("@" + c.getUsername())) {
+                    notifyPrivate(NOTIFICATION_NOSELFMSG, c, c.getUsername(), null);
+                }
+                else {
+                    String username = dest.substring(1, dest.length());
+                    success = notifyPrivate(NOTIFICATION_PRIVATEMSG, c, username, msg);
+                    if (! success) {
+                        // Notificación en caso de que no se haya encontrado el usuario
+                        notifyPrivate(NOTIFICATION_NOSUCHUSER, c, c.getUsername(), null);
+                    }
+                }
             }
             else if (dest.substring(0, 1).equals("#")) {
-                success = notifyGroup(NOTIFICATION_GROUPMSG, c, dest, msg);
+                Usuario u = sessions.get(c);
+                Grupo g = findGroup(dest);
+                if (g == null) {
+                    // Notificación en el caso de que el grupo no exista
+                    notifyPrivate(NOTIFICATION_NOSUCHGROUP, c, c.getUsername(), null);
+                }
+                else if (!g.hasMember(sessions.get(c))) {
+                    // Notificación en el caso de que el usuario no pertenezca al grupo
+                    notifyPrivate(NOTIFICATION_NOMEMBERSHIP, c, c.getUsername(), null);
+                }
+                else {
+                    success = notifyGroup(NOTIFICATION_GROUPMSG, c, dest, msg);
+                    if (! success) {
+                        // Notificación en caso de que el grupo esté vacío
+                        notifyPrivate(NOTIFICATION_GROUPEMPTY, c, c.getUsername(), null);
+                    }
+                }
             }
+            else {
+                // Notificación en caso de tipo de mensaje no conocido
+                notifyPrivate(NOTIFICATION_NOMSGTYPE, c, c.getUsername(), null);
+            }
+        }
+        else {
+            // Notificación en el caso de error de validación de parámetros
+            notifyPrivate(NOTIFICATION_NOVALIDMSG, c, c.getUsername(), null);
         }
         return success;
     }
 
+    // Notificación a un usuario específico
     private boolean notifyPrivate(int notificationType, Cliente c, String dest, String msg) throws RemoteException {
         boolean success = false;
         Usuario orig = sessions.get(c);
         // Buscar cliente(s) destino (a partir del nombre de usuario)
         if (orig != null) {
             for (Map.Entry<Cliente, Usuario> entry: sessions.entrySet()) {
-                // Comprobar que coincide con nombre de usuario, y no con el usuario origen
-                if (dest.equals("@" + entry.getValue().getUsername()) && !entry.getValue().equals(orig)) {
+                // Comprobar que coincide con nombre de usuario
+                if (dest.equals(entry.getValue().getUsername())) {
                     success = true;
-                    entry.getKey().notify(NOTIFICATION_PRIVATEMSG, orig.getUsername(), null, msg);
+                    entry.getKey().notify(notificationType, orig.getUsername(), null, msg);
                 }
             }
         }
         return success;
     }
 
+    // Notificación a los usuarios de un grupo
     private boolean notifyGroup(int notificationType, Cliente c, String dest, String msg) throws RemoteException {
         boolean success = false;
         Usuario orig = sessions.get(c);
@@ -176,6 +246,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         return success;
     }
 
+    // Inicio de sesión de un usuario
     public boolean login(Cliente c) throws RemoteException {
         Usuario u = new Usuario(c.getUsername(), c.getPassword());
         if (buscarUsuario(u, registrados) == null) {
@@ -186,6 +257,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         return true;
     }
 
+    // Creación de cuenta de un usuario
     public boolean addUsuario(Cliente c) throws RemoteException {
         Usuario u = new Usuario(c.getUsername(), c.getPassword());
         if (buscarUsuario(u, registrados) != null) {
@@ -197,10 +269,12 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         return true;
     }
 
+    // Cierre de sesión de un usuario
     public void logout(Cliente c) throws RemoteException {
         sessions.remove(c);
     }
 
+    // Buscar un usuario, por clase de tipo Usuario, en una lista de usuarios
     private Usuario buscarUsuario(Usuario u, List<Usuario> listaUsuarios) {
         for(Usuario iteradorUsuario: listaUsuarios) {
             if (iteradorUsuario.equals(u)) {
@@ -210,6 +284,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         return null;
     }
 
+    // Buscar un usuario, por nombre de usuario, en una lista de usuarios
     private Usuario buscarUsuario(String username, List<Usuario> listaUsuarios) {
         for(Usuario iteradorUsuario: listaUsuarios) {
             if (username.equals("@" + iteradorUsuario.getUsername())) {
