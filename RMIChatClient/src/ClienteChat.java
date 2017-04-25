@@ -73,6 +73,22 @@ class ClienteChat {
                         Logger.info("No te has unido a ning\u00fan grupo.");
                     }
                 }
+                // Caso "/users"; Mostrar lista de usuarios en un grupo
+                else if (words[0].equalsIgnoreCase("/users") && words.length == 2) {
+                    String users[] = srv.listGroupMembers(words[1], c);
+                    if (users != null && users.length > 0) {
+                        Logger.info("Lista de usuarios conectados a " + words[1] + ": " + String.join(", ", users) + ".");
+                    }
+                    // El método se encarga de las comprobaciones
+                }
+                // Caso "/connected"; Mostrar lista de usuarios conectados en un grupo
+                else if (words[0].equalsIgnoreCase("/connected") && words.length == 2) {
+                    String users[] = srv.listConnectedGroupMembers(words[1], c);
+                    if (users != null && users.length > 0) {
+                        Logger.info("Lista de usuarios conectados en " + words[1] + ": " + String.join(", ", users) + ".");
+                    }
+                    // El método se encarga de las comprobaciones
+                }
                 // Caso "/j"; unión a un grupo
                 else if (words[0].equalsIgnoreCase("/j") && words.length == 2) {
                     srv.joinGroup(words[1], c);
@@ -109,14 +125,15 @@ class ClienteChat {
         // Comando invalido
         Logger.text(
             "Lista de comandos v\u00e1lidos:\n\n" +
-            "    " + Logger.GRAY_BOLD + "/groups\n" + Logger.RESET +
-            "    Mostrar lista de grupos existentes.\n\n" +
-            "    " + Logger.GRAY_BOLD + "/show\n" + Logger.RESET +
-            "    Mostrar lista de grupos a los que te has unido.\n\n" +
-            "    " + Logger.GRAY_BOLD + "/j #GRUPO\n" + Logger.RESET +
-            "    Union a un grupo de chat.\n\n" +
-            "    " + Logger.GRAY_BOLD + "/l #GRUPO\n" + Logger.RESET +
-            "    Salida de un grupo de chat.\n\n" +
+            "    " + Logger.GRAY_BOLD + "/groups" + Logger.RESET + " ; " +
+                     Logger.GRAY_BOLD + "/show\n" + Logger.RESET +
+            "    Mostrar lista de grupos existentes, y grupos a los que te has unido.\n\n" +
+            "    " + Logger.GRAY_BOLD + "/j #GRUPO" + Logger.RESET + " ; " +
+                     Logger.GRAY_BOLD + "/l #GRUPO\n" + Logger.RESET +
+            "    Uni\u00f3n o salida de un grupo de chat.\n\n" +
+            "    " + Logger.GRAY_BOLD + "/users #GRUPO" + Logger.RESET + " ; " +
+                     Logger.GRAY_BOLD + "/connected #GRUPO\n" + Logger.RESET +
+            "    Mostrar todos los usuarios de un grupo, o solo los conectados.\n\n" +
             "    " + Logger.GRAY_BOLD + "#GRUPO MENSAJE\n" + Logger.RESET +
             "    Env\u00edo de un nuevo mensaje p\u00fablico al grupo #GRUPO.\n" +
             "    Por ejemplo: #general Hola a todos!\n\n" +

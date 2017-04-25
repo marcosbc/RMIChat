@@ -171,6 +171,58 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
         return result;
     }
 
+    // Listado de usuarios en un grupo
+    public String[] listConnectedGroupMembers(String name, Cliente c) throws RemoteException {
+        return getGroupMembers(name, c, true);
+    }
+
+    // Listado de usuarios en un grupo
+    public String[] listGroupMembers(String name, Cliente c) throws RemoteException {
+        return getGroupMembers(name, c, false);
+    }
+
+    // Obtener clases de usuario, para simplificar gestión de notificaciones
+    private String[] getGroupMembers(String name, Cliente c, boolean connectedOnly) throws RemoteException {
+        String[] result = null;
+        Usuario u = sessions.get(c);
+        Grupo g = findGroup(name);
+        if (u != null) {
+            // El usuario debe haber iniciado sesión
+            if (g == null) {
+                // Notificación en el caso de que no exista un grupo
+                notifyPrivate(NOTIFICATION_NOSUCHGROUP, u, u.getUsername(), null);
+            }
+            else if (!g.hasMember(u)) {
+                // Notificación en el caso de que el usuario no pertenezca al grupo
+                // Así nos aseguramos que siempre tendremos usuarios con este método
+                notifyPrivate(NOTIFICATION_NOMEMBERSHIP, u, u.getUsername(), null);
+            }
+            else {
+                List<Usuario> members = g.getMembers();
+                ArrayList<String> usernames = new ArrayList<String>();
+                // Recorrer cada grupo y comprobar si es miembro
+                for (int i = 0; i < members.size(); i++) {
+                    if (!connectedOnly || isUserConnected(members.get(i))) {
+                        usernames.add(members.get(i).getUsername());
+                    }
+                }
+                result = usernames.toArray(new String[usernames.size()]);
+            }
+        }
+        return result;
+    }
+
+    // Comprobar si un usuario está conectado o no
+    private boolean isUserConnected (Usuario u) {
+        // Recorrer lista de sesiones
+        for (Map.Entry<Cliente, Usuario> entry: sessions.entrySet()) {
+            if (u.equals(entry.getValue())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Envío de un mensaje de chat por un usuario, a un destino
     public boolean sendMessage(String dest, String msg, Cliente c) throws RemoteException {
         boolean success = false;

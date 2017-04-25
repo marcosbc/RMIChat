@@ -6,6 +6,8 @@ interface ServicioChat extends Remote {
     boolean leaveGroup(String group, Cliente c) throws RemoteException;
     String[] listGroups() throws RemoteException;
     String[] listGroups(Cliente c) throws RemoteException;
+    String[] listGroupMembers(String name, Cliente c) throws RemoteException;
+    String[] listConnectedGroupMembers(String name, Cliente c) throws RemoteException;
     boolean sendMessage(String dest, String msg, Cliente c) throws RemoteException;
     boolean addUsuario(Cliente c) throws RemoteException;
     boolean login(Cliente c) throws RemoteException;
