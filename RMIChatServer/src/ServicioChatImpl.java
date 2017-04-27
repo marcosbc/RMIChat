@@ -358,8 +358,8 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
             return false;
         }
         Usuario u = new Usuario(c.getUsername(), c.getPassword());
-        if (buscarUsuario(u, registrados) != null) {
-            // Ya esta registrado
+        if (buscarUsuario(u.getUsername(), registrados) != null) {
+            // Hay un usuario registrado con el mismo nombre de usuario
             return false;
         }
         registrados.add(u);
@@ -389,7 +389,7 @@ class ServicioChatImpl extends UnicastRemoteObject implements ServicioChat {
     // Buscar un usuario, por nombre de usuario, en una lista de usuarios
     private Usuario buscarUsuario(String username, List<Usuario> listaUsuarios) {
         for(Usuario iteradorUsuario: listaUsuarios) {
-            if (username.equals("@" + iteradorUsuario.getUsername())) {
+            if (username.equals(iteradorUsuario.getUsername())) {
                 return iteradorUsuario;
             }
         }
